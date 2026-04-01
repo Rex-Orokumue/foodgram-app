@@ -51,6 +51,34 @@ class OrderModel {
     required this.postMedia,
   });
 
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'buyer_id': buyerId,
+      'seller_id': sellerId,
+      'post_id': postId,
+      'status': status,
+      'delivery_address': deliveryAddress,
+      'total_amount': totalAmount.toString(),
+      'notes': notes,
+      'confirmed_at': confirmedAt?.toIso8601String(),
+      'delivered_at': deliveredAt?.toIso8601String(),
+      'cancelled_at': cancelledAt?.toIso8601String(),
+      'cancellation_reason': cancellationReason,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
+      'caption': caption,
+      'cuisine_tag': cuisineTag,
+      'seller_username': sellerUsername,
+      'seller_display_name': sellerDisplayName,
+      'seller_avatar_url': sellerAvatarUrl,
+      'buyer_username': buyerUsername,
+      'buyer_display_name': buyerDisplayName,
+      'buyer_avatar_url': buyerAvatarUrl,
+      'post_media': postMedia,
+    };
+  }
+
   factory OrderModel.fromJson(Map<String, dynamic> json) {
     return OrderModel(
       id: json['id'] as String,

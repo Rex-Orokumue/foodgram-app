@@ -6,6 +6,7 @@ import '../providers/feed.provider.dart';
 import '../widgets/post_card.dart';
 import '../widgets/story_tray.dart';
 import '../../../features/auth/providers/auth.provider.dart';
+import '../providers/story_feed.provider.dart';
 
 class FeedScreen extends ConsumerStatefulWidget {
   const FeedScreen({super.key});
@@ -18,19 +19,20 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
   final _scrollController = ScrollController();
 
   @override
-  void initState() {
-    super.initState();
-    // Load feed when screen opens
-    Future.microtask(() => ref.read(feedProvider.notifier).loadFeed());
+void initState() {
+  super.initState();
+  Future.microtask(() {
+    ref.read(feedProvider.notifier).loadFeed();
+    ref.read(storyFeedProvider.notifier).loadStories();
+  });
 
-    // Infinite scroll listener
-    _scrollController.addListener(() {
-      if (_scrollController.position.pixels >=
-          _scrollController.position.maxScrollExtent - 300) {
-        ref.read(feedProvider.notifier).loadMore();
-      }
-    });
-  }
+  _scrollController.addListener(() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 300) {
+      ref.read(feedProvider.notifier).loadMore();
+    }
+  });
+}
 
   @override
   void dispose() {
