@@ -90,7 +90,9 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
             ? _buildEmptyFeed()
             : CustomScrollView(
                 controller: _scrollController,
+                physics: const AlwaysScrollableScrollPhysics(),
                 slivers: [
+                  
                   // Story tray at top
                   const SliverToBoxAdapter(child: StoryTray()),
 
