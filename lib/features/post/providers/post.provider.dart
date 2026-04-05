@@ -3,6 +3,8 @@ import 'package:image_picker/image_picker.dart';
 import '../../../core/api/api_client.dart';
 import '../../../shared/models/post.model.dart';
 import '../../../shared/models/comment.model.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 class CreatePostState {
   final List<XFile> selectedMedia;
@@ -110,9 +112,31 @@ class CreatePostNotifier extends Notifier<CreatePostState> {
   }
 
   Future<void> _uploadMedia(String postId) async {
-    // Media upload will be implemented with Cloudflare R2
-    // For now posts are created without media
-    // This is where we'll add the multipart form upload
+    try {
+      final dio = ApiClient.mediaInstance;
+
+      final formData = FormData.fromMap({
+        'postId': postId,
+        'media': await Future.wait(
+          state.selectedMedia.map(
+            (file) async => await MultipartFile.fromFile(
+              file.path,
+              filename: file.name,
+            ),
+          ),
+        ),
+      });
+
+      await dio.post(
+        '/media/post',
+        data: formData,
+        options: Options(
+          contentType: 'multipart/form-data',
+        ),
+      );
+    } catch (e) {
+      debugPrint('Media upload failed: $e');
+    }
   }
 
   void reset() {
