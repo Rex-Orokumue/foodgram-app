@@ -13,6 +13,8 @@ import '../../features/stories/screens/story_viewer_screen.dart';
 import '../../features/recipe/screens/recipe_screen.dart';
 import '../../features/orders/screens/orders_screen.dart';
 import '../../shared/widgets/main_shell.dart';
+import '../../features/stories/screens/create_story_screen.dart';
+import '../../features/profile/screens/edit_profile_screen.dart';
 
 // Route names
 class AppRoutes {
@@ -27,6 +29,8 @@ class AppRoutes {
   static const String storyViewer = '/stories/:userId';
   static const String recipe = '/recipe/:postId';
   static const String orders = '/orders';
+  static const String createStory = '/create-story';
+  static const String editProfile = '/edit-profile';
 }
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -112,6 +116,14 @@ final routerProvider = Provider<GoRouter>((ref) {
           final postId = state.pathParameters['postId']!;
           return RecipeScreen(postId: postId);
         },
+      ),
+      GoRoute(
+        path: AppRoutes.createStory,
+        builder: (context, state) => const CreateStoryScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.editProfile,
+        builder: (context, state) => const EditProfileScreen(),
       ),
     ],
   );

@@ -17,22 +17,26 @@ class FeedScreen extends ConsumerStatefulWidget {
 
 class _FeedScreenState extends ConsumerState<FeedScreen> {
   final _scrollController = ScrollController();
+  bool _storiesLoaded = false;
 
   @override
-void initState() {
-  super.initState();
-  Future.microtask(() {
-    ref.read(feedProvider.notifier).loadFeed();
-    ref.read(storyFeedProvider.notifier).loadStories();
-  });
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      ref.read(feedProvider.notifier).loadFeed();
+      if (!_storiesLoaded) {
+        _storiesLoaded = true;
+        ref.read(storyFeedProvider.notifier).loadStories();
+      }
+    });
 
-  _scrollController.addListener(() {
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - 300) {
-      ref.read(feedProvider.notifier).loadMore();
-    }
-  });
-}
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels >=
+          _scrollController.position.maxScrollExtent - 300) {
+        ref.read(feedProvider.notifier).loadMore();
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -80,54 +84,67 @@ void initState() {
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: () => ref.read(feedProvider.notifier).refresh(),
+        onRefresh: () async {
+          await ref.read(feedProvider.notifier).refresh();
+          await ref.read(storyFeedProvider.notifier).loadStories();
+        },
         color: AppColors.primary,
         child: feedState.isLoading
             ? const Center(
                 child: CircularProgressIndicator(color: AppColors.primary),
               )
             : feedState.error != null
-            ? _buildError(feedState.error!)
-            : feedState.posts.isEmpty
-            ? _buildEmptyFeed()
-            : CustomScrollView(
-                controller: _scrollController,
-                physics: const AlwaysScrollableScrollPhysics(),
-                slivers: [
-                  
-                  // Story tray at top
-                  const SliverToBoxAdapter(child: StoryTray()),
-
-                  // Posts
-                  SliverList(
-                    delegate: SliverChildBuilderDelegate((context, index) {
-                      if (index == feedState.posts.length) {
-                        return feedState.isLoadingMore
-                            ? const Padding(
-                                padding: EdgeInsets.all(16),
-                                child: Center(
-                                  child: CircularProgressIndicator(
-                                    color: AppColors.primary,
-                                  ),
-                                ),
-                              )
-                            : const SizedBox(height: 80);
-                      }
-                      return PostCard(
-                        post: feedState.posts[index],
-                        onLike: () => ref
-                            .read(feedProvider.notifier)
-                            .likePost(feedState.posts[index].id),
-                        onTap: () =>
-                            context.push('/post/${feedState.posts[index].id}'),
-                        onProfileTap: () => context.push(
-                          '/profile/${feedState.posts[index].username}',
-                        ),
-                      );
-                    }, childCount: feedState.posts.length + 1),
-                  ),
-                ],
-              ),
+                ? _buildError(feedState.error!)
+                : feedState.posts.isEmpty
+                    ? _buildEmptyFeed()
+                    : CustomScrollView(
+                        controller: _scrollController,
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        slivers: [
+                          const SliverToBoxAdapter(child: StoryTray()),
+                          SliverList(
+                            delegate: SliverChildBuilderDelegate(
+                              (context, index) {
+                                if (index == feedState.posts.length) {
+                                  return feedState.isLoadingMore
+                                      ? const Padding(
+                                          padding: EdgeInsets.all(16),
+                                          child: Center(
+                                            child: CircularProgressIndicator(
+                                                color: AppColors.primary),
+                                          ),
+                                        )
+                                      : const SizedBox(height: 80);
+                                }
+                                final post = feedState.posts[index];
+                                final storyState = ref.watch(storyFeedProvider);
+                                final hasStory = storyState.groups
+                                        .any((g) => g.userId == post.userId) ||
+                                    storyState.ownStories?.userId == post.userId;
+                                final hasUnviewedStory = storyState.groups
+                                        .where((g) => g.userId == post.userId)
+                                        .any((g) => g.hasUnviewed) ||
+                                    (storyState.ownStories?.userId == post.userId &&
+                                        (storyState.ownStories?.hasUnviewed ?? false));
+                                return PostCard(
+                                  post: post,
+                                  onLike: () => ref
+                                      .read(feedProvider.notifier)
+                                      .likePost(post.id),
+                                  onTap: () => context.push('/post/${post.id}'),
+                                  onProfileTap: () =>
+                                      context.push('/profile/${post.username}'),
+                                  onStoryTap: () =>
+                                      context.push('/stories/${post.userId}'),
+                                  hasStory: hasStory,
+                                  hasUnviewedStory: hasUnviewedStory,
+                                );
+                              },
+                              childCount: feedState.posts.length + 1,
+                            ),
+                          ),
+                        ],
+                      ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => context.push('/create-post'),

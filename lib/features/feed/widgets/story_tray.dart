@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/theme/theme.dart';
 import '../providers/story_feed.provider.dart';
+import '../../../shared/models/story.model.dart';
 
 class StoryTray extends ConsumerWidget {
   const StoryTray({super.key});
@@ -12,6 +13,12 @@ class StoryTray extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(storyFeedProvider);
 
+    // Own story always first, then other users' stories (most recent first)
+    final allGroups = [
+      if (state.ownStories != null) state.ownStories!,
+      ...state.groups,
+    ];
+
     return Container(
       height: 100,
       color: AppColors.surface,
@@ -19,12 +26,12 @@ class StoryTray extends ConsumerWidget {
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        itemCount: state.groups.length + 1,
+        itemCount: allGroups.length + 1,
         itemBuilder: (context, index) {
           if (index == 0) {
             return _buildAddStoryButton(context);
           }
-          final group = state.groups[index - 1];
+          final group = allGroups[index - 1];
           return _buildStoryBubble(context, group);
         },
       ),
@@ -35,7 +42,7 @@ class StoryTray extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.only(right: 12),
       child: GestureDetector(
-        onTap: () => context.push('/create-post'),
+        onTap: () => context.push('/create-story'),
         child: Column(
           children: [
             Container(
@@ -66,8 +73,8 @@ class StoryTray extends ConsumerWidget {
     );
   }
 
-  Widget _buildStoryBubble(BuildContext context, dynamic group) {
-    final hasUnviewed = group.hasUnviewed as bool;
+  Widget _buildStoryBubble(BuildContext context, StoryGroupModel group) {
+    final hasUnviewed = group.hasUnviewed;
 
     return GestureDetector(
       onTap: () => context.push('/stories/${group.userId}'),
@@ -93,12 +100,12 @@ class StoryTray extends ConsumerWidget {
               child: CircleAvatar(
                 backgroundColor: AppColors.surfaceVariant,
                 backgroundImage: group.avatarUrl != null
-                    ? CachedNetworkImageProvider(group.avatarUrl as String)
+                    ? CachedNetworkImageProvider(group.avatarUrl!)
                     : null,
                 child: group.avatarUrl == null
                     ? Text(
-                        (group.authorName as String).isNotEmpty
-                            ? (group.authorName as String)[0].toUpperCase()
+                        group.authorName.isNotEmpty
+                            ? group.authorName[0].toUpperCase()
                             : '?',
                         style: const TextStyle(
                           fontSize: 16,
@@ -111,7 +118,7 @@ class StoryTray extends ConsumerWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              group.authorName as String,
+              group.authorName,
               style: const TextStyle(
                 fontSize: 10,
                 color: AppColors.textSecondary,

@@ -221,7 +221,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               width: double.infinity,
               height: 34,
               child: OutlinedButton(
-                onPressed: () {},
+                onPressed: () => context.push('/edit-profile'),
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: AppColors.border),
                   shape: RoundedRectangleBorder(

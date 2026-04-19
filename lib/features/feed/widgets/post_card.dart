@@ -8,6 +8,9 @@ class PostCard extends StatelessWidget {
   final VoidCallback onLike;
   final VoidCallback onTap;
   final VoidCallback onProfileTap;
+  final VoidCallback? onStoryTap;
+  final bool hasStory;
+  final bool hasUnviewedStory;
 
   const PostCard({
     super.key,
@@ -15,8 +18,11 @@ class PostCard extends StatelessWidget {
     required this.onLike,
     required this.onTap,
     required this.onProfileTap,
+    this.onStoryTap,
+    this.hasStory = false,
+    this.hasUnviewedStory = false,
   });
-
+  
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -40,106 +46,123 @@ class PostCard extends StatelessWidget {
   }
 
   Widget _buildHeader() {
-    return GestureDetector(
-      onTap: onProfileTap,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-        child: Row(
-          children: [
-            // Avatar
-            CircleAvatar(
-              radius: 18,
-              backgroundColor: AppColors.surfaceVariant,
-              backgroundImage: post.avatarUrl != null
-                  ? CachedNetworkImageProvider(post.avatarUrl!)
-                  : null,
-              child: post.avatarUrl == null
-                  ? Text(
-                      post.authorName.isNotEmpty
-                          ? post.authorName[0].toUpperCase()
-                          : '?',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textSecondary,
-                      ),
-                    )
-                  : null,
-            ),
-
-            const SizedBox(width: 10),
-
-            // Name and location
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        post.authorName,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+      child: Row(
+        children: [
+          // Avatar with optional story ring
+          GestureDetector(
+            onTap: onStoryTap ?? onProfileTap,
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: hasStory && hasUnviewedStory
+                    ? const LinearGradient(
+                        colors: [AppColors.primary, AppColors.primaryDark],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      )
+                    : null,
+                color: hasStory && !hasUnviewedStory
+                    ? AppColors.textHint
+                    : Colors.transparent,
+              ),
+              padding: EdgeInsets.all(hasStory ? 2 : 0),
+              child: CircleAvatar(
+                radius: 18,
+                backgroundColor: AppColors.surfaceVariant,
+                backgroundImage: post.avatarUrl != null
+                    ? CachedNetworkImageProvider(post.avatarUrl!)
+                    : null,
+                child: post.avatarUrl == null
+                    ? Text(
+                        post.authorName.isNotEmpty
+                            ? post.authorName[0].toUpperCase()
+                            : '?',
                         style: const TextStyle(
-                          fontSize: 13,
+                          fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
+                          color: AppColors.textSecondary,
                         ),
-                      ),
-                      if (post.isVerified == true) ...[
-                        const SizedBox(width: 4),
-                        const Icon(
-                          Icons.verified,
-                          size: 14,
-                          color: AppColors.primary,
-                        ),
-                      ],
-                    ],
-                  ),
-                  if (post.locationName != null)
+                      )
+                    : null,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+
+          // Name and location
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
                     Text(
-                      post.locationName!,
+                      post.authorName,
                       style: const TextStyle(
-                        fontSize: 11,
-                        color: AppColors.textSecondary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
                       ),
                     ),
-                ],
-              ),
-            ),
-
-            // Post type badge
-            if (post.isRecipe || post.isMenuItem)
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 3,
+                    if (post.isVerified == true) ...[
+                      const SizedBox(width: 4),
+                      const Icon(
+                        Icons.verified,
+                        size: 14,
+                        color: AppColors.primary,
+                      ),
+                    ],
+                  ],
                 ),
-                decoration: BoxDecoration(
-                  color: post.isRecipe
-                      ? AppColors.primary.withValues(alpha: 0.1)
-                      : AppColors.success.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  post.isRecipe ? 'Recipe' : 'Order',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    color: post.isRecipe
-                        ? AppColors.primary
-                        : AppColors.success,
+                if (post.locationName != null)
+                  Text(
+                    post.locationName!,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
+              ],
+            ),
+          ),
+
+          // Post type badge
+          if (post.isRecipe || post.isMenuItem)
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 8,
+                vertical: 3,
+              ),
+              decoration: BoxDecoration(
+                color: post.isRecipe
+                    ? AppColors.primary.withValues(alpha: 0.1)
+                    : AppColors.success.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                post.isRecipe ? 'Recipe' : 'Order',
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: post.isRecipe
+                      ? AppColors.primary
+                      : AppColors.success,
                 ),
               ),
-
-            const SizedBox(width: 8),
-
-            const Icon(
-              Icons.more_horiz,
-              color: AppColors.textSecondary,
-              size: 20,
             ),
-          ],
-        ),
+
+          const SizedBox(width: 8),
+
+          const Icon(
+            Icons.more_horiz,
+            color: AppColors.textSecondary,
+            size: 20,
+          ),
+        ],
       ),
     );
   }
